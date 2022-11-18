@@ -29,6 +29,8 @@ import java.applet.*;
 public class Mandel extends JFrame //extends Applet
 {
 	Random myRandom = new Random();
+	int maxIter=20000;
+	Color[] meineFarben = new Color[maxIter];
 	myCanvas bildflaeche = new myCanvas();
 	Panel p1 = new Panel();
 	Panel p2 = new Panel();
@@ -59,9 +61,6 @@ public class Mandel extends JFrame //extends Applet
 	
 	int breiteAnzeige = 0;
         int hoeheAnzeige  = 0;
-	int maxIter=2000;
-	Color[] meineFarben = new Color[maxIter];
-	int[][] punkte = new int[breiteAnzeige][hoeheAnzeige];
 	double xmin,xmax,ymin,ymax,xfaktor=0,yfaktor=0;
 	int mx1,mx2,my1,my2,aktuell=0;
 	boolean mousedown=false,bunt=false,neuBerechnen=true,updated=false,erstesMal=true,losmalen=true,warten=true;
@@ -71,15 +70,10 @@ public class Mandel extends JFrame //extends Applet
 	Stack<Double> ymaxHist = new Stack <Double>();
 	Date myDate1,myDate2,myDate3;
 /***************************************************************************/
-	class myCanvas extends Canvas implements ImageObserver   
+	class myCanvas extends JPanel implements ImageObserver   
 	{
 		public Image dbImage1,dbImage2;
 		public Graphics dbg1,dbg2;
-			
-		public boolean imageUpdate(Image img,int infoflags,int x,int y,int width,int height)
-		{
-			return true;
-		}
 		
 		public myCanvas() 
 		{
@@ -89,64 +83,24 @@ public class Mandel extends JFrame //extends Applet
 			{
 				public void componentResized(ComponentEvent evt) 
 				{
+					initGraphics();
 					breiteAnzeige = getWidth();
 					hoeheAnzeige = getHeight();
-					System.out.println("Resized to: "+breiteAnzeige+" x "+hoeheAnzeige);
-					punkte = new int[breiteAnzeige][hoeheAnzeige];
-					//for (int bra=0; bra < breiteAnzeige; bra++)
-					    //for (int ha=0; ha < hoeheAnzeige ; ha++)
-						//punkte[bra][ha]=200;
-					berechne(punkte);
+					berechne();
 					myCanvas.this.repaint();
 				}
 			});
 		}
 	
-		    // Update - Methode, löscht NICHT die Grafik, damit es nicht flackert
-		public void update (Graphics g)
-		{
-			if (warten)
-			{
-				g.setColor(Color.RED);
-				g.drawChars(new String("Bitte Warten...").toCharArray(),0,15,this.getSize().width/2,this.getSize().height/2);
-			}
-			paint(g);
+		private void initGraphics() {
+			dbImage1 = createImage (this.getSize().width, this.getSize().height);
+			dbg1 = dbImage1.getGraphics ();
+			dbImage2 = createImage (this.getSize().width, this.getSize().height);
+			dbg2 = dbImage2.getGraphics ();
 		}
 	
 		public void paint (Graphics g)	
 		{
-			myDate1 = new Date();
-			// Initialisierung des DoubleBuffers
-			if (dbImage1 == null || (dbImage1.getWidth(this) != this.getSize().width)||(dbImage1.getHeight(this) != this.getSize().height))
-			{
-				dbImage1 = createImage (this.getSize().width, this.getSize().height);
-				dbg1 = dbImage1.getGraphics ();
-			}
-			if (dbImage2 == null || (dbImage2.getWidth(this) != this.getSize().width)||(dbImage2.getHeight(this) != this.getSize().height))
-			{
-				dbImage2 = createImage (this.getSize().width, this.getSize().height);
-				dbg2 = dbImage2.getGraphics ();
-			}
-			if (warten)
-			{
-				g.setColor(Color.RED);
-				g.drawChars(new String("Bitte Warten...").toCharArray(),0,15,this.getSize().width/2,this.getSize().height/2);
-			}
-			//Malen im 2. Hintergrundbild
-			if (losmalen)
-			{
-				System.out.println("male: "+breiteAnzeige+" x "+hoeheAnzeige);
-				for (int px = 1 ; px < breiteAnzeige ; px++)
-				{
-					for (int py = 1 ; py < hoeheAnzeige ; py++)
-					{
-						dbg2.setColor(meineFarben[punkte[px][py]]);
-						dbg2.drawLine(px,py,px,py);
-					}
-				}
-				losmalen=false;
-			}
-			//"abmalen" auf das 1. Hintergrundbild
 			dbg1.drawImage(dbImage2,0,0,this);
 			//bei gedrücktem Mausknopf das weisse Rechteck über das 1. Hintergrundbild zeichnen
 			if (mousedown)
@@ -157,12 +111,15 @@ public class Mandel extends JFrame //extends Applet
 			// Nun fertig gezeichnetes Bild auf dem richtigen Bildschirm anzeigen
 			g.drawImage (dbImage1, 0, 0, this);
 			myDate2 = new Date();
-			System.out.println("Malzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
 		}
-		
-		public Dimension getPreferredSize() 	
-		{
-		    return new Dimension(breiteAnzeige,hoeheAnzeige);
+
+		public void setPixel(int x, int y, Color color) {
+			dbg2.setColor(color);
+			dbg2.drawLine(x,y,x,y);
+		}
+
+		public void reset() {
+			initGraphics();
 		}
 		    
 	}
@@ -171,12 +128,10 @@ public class Mandel extends JFrame //extends Applet
     
     public static void main (String[] args)
     {
-        //baue ein Fenster...
         Mandel myMandel = new Mandel("Jos buntes Mandelbrotmengenprogramm");
-        myMandel.setSize(900,600);
+        myMandel.setSize(800,600);
         myMandel.setLocation(10,10);
         myMandel.setVisible(true);
-        //myMandel.setResizable(true);
     }
     
     public Mandel(String name)
@@ -186,7 +141,6 @@ public class Mandel extends JFrame //extends Applet
     
     public void init()
     {
-        //super(name);
         xmin=-2.5;
         xmax=0.8;
         ymin=-1.25;
@@ -223,7 +177,6 @@ public class Mandel extends JFrame //extends Applet
         p2.add(p26);
         p2.add(p27);
         p2.add(p28);
-        //p2.setLayout(new FlowLayout());
         p2.setLayout(new GridLayout(0,1));
         this.setLayout(new BorderLayout());
         add(p1,BorderLayout.CENTER);
@@ -234,7 +187,6 @@ public class Mandel extends JFrame //extends Applet
     	bZurueck.addActionListener(new zurueckActionListener());
         bildflaeche.addMouseListener(new kaestchenListener());
         bildflaeche.addMouseMotionListener(new zieher());
-       // addWindowListener(new WindowClosingListener());	
         cb1.addItemListener(new CheckboxListener());
         cb2.addItemListener(new CheckboxListener());
         
@@ -244,7 +196,7 @@ public class Mandel extends JFrame //extends Applet
         tfYmax.setText(((Double)ymax).toString());
         
         erzeugeFarben(meineFarben);
-        berechne(punkte);
+        berechne();
     }
     
     public void erzeugeFarben(Color[] meineFarben)
@@ -273,28 +225,23 @@ public class Mandel extends JFrame //extends Applet
                     //zaehlerzaehler++;
                 }
                 meineFarben[i]=new Color(farbe,farbe,farbe);//((int)215*i/maxIter),((int)215*i/maxIter),((int)215*i/maxIter));
+                //meineFarben[i]=new Color(255-(int)(i*255/maxIter),255-(int)(i*255/maxIter),255-(int)(i*255/maxIter));
             }
         }
         meineFarben[maxIter-1] = new Color(0,0,0);
     }
     
-    public void berechne(int[][] punkte)
+    public void berechne()
 	{
+    	System.out.println("Starte Berechnung " + breiteAnzeige + " x " + hoeheAnzeige + " MaxIter: " + maxIter);
 		int iter=0,i;
 		double fx,fy,real,imaginary; //realQuad,imaginaryQuad;
-		double betrag_quadrat=0,temp=0;
-		warten=true;
-		
-		bildflaeche.repaint();
-		
-		myDate1 = new Date();
-		
+		double betrag_quadrat=0,temp=0;	
+		myDate1 = new Date();		
 		xfaktor = Math.abs(xmax-xmin) / breiteAnzeige;
 		yfaktor = Math.abs(ymax-ymin) / hoeheAnzeige;
-		System.out.println("Breite: "+breiteAnzeige+" Hoehe: "+hoeheAnzeige);
 		for (int px = 1 ; px < breiteAnzeige ; px++)
 		{
-			//System.out.println("Spalte: "+px);
 		    for (int py = 1 ; py < hoeheAnzeige ; py++)
 		    {
                 fx= ((double)px*xfaktor)+(xmin);
@@ -306,66 +253,26 @@ public class Mandel extends JFrame //extends Applet
                 for (i = 1 ; i < maxIter ; i++)
                 {
                     temp=real;
-                    //Die "Optimierung" mit Speichern der Quadrate verlangsamt das Programm!!
-                    //(wohl n guter Compiler...)
-                    //realQuad=real * real;
-                    //imaginaryQuad=imaginary * imaginary;
                     real = real * real - imaginary * imaginary + fx;
                     imaginary = 2 * temp * imaginary + fy;
                     if ((real * real + imaginary * imaginary)>4)
                         break;
                 }
-                punkte[px][py]=i-1;
-		    }
-		}
-		myDate2=new Date();
-		System.out.println("Rechenzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
-		myDate1 = new Date();
-				xfaktor = Math.abs(xmax-xmin) / breiteAnzeige;
-		yfaktor = Math.abs(ymax-ymin) / hoeheAnzeige;
-		System.out.println("Breite: "+breiteAnzeige+" Hoehe: "+hoeheAnzeige);
-		for (int px = 1 ; px < breiteAnzeige ; px++)
-		{
-			//System.out.println("Spalte: "+px);
-		    for (int py = 1 ; py < hoeheAnzeige ; py++)
-		    {
-                fx= ((double)px*xfaktor)+(xmin);
-                fy = ((double)py*yfaktor)+(ymin);
-                iter=0;
-                betrag_quadrat = 0;
-                real=0;
-                imaginary=0;
-		int anzIter=maxIter;
-                for (i = 1 ; i < maxIter ; i++)
-                {
-                    temp=real;
-                    //Die "Optimierung" mit Speichern der Quadrate verlangsamt das Programm!!
-                    //(wohl n guter Compiler...)
-                    //realQuad=real * real;
-                    //imaginaryQuad=imaginary * imaginary;
-                    real = real * real - imaginary * imaginary + fx;
-                    imaginary = 2 * temp * imaginary + fy;
-                    if ((real * real + imaginary * imaginary)>4)  
-		    {
-			anzIter=i;
-                        break;
-		    }
+                bildflaeche.setPixel(px,py,meineFarben[i-1]);
+                if(py== 1) {
+                	bildflaeche.paintImmediately(1,py,bildflaeche.getWidth(),bildflaeche.getHeight());
                 }
-			punkte[px][py]=anzIter-1;
 		    }
 		}
 		myDate2=new Date();
 		System.out.println("Rechenzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
-		losmalen=true;
-		neuBerechnen=false;
-		warten=false;
+		//bildflaeche.repaint();
 	}
 /***************************************************************************/
     class losActionListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
         {
-		
             aktuell++;
             xminHist.push(new Double(xmin));
             yminHist.push(new Double(ymin));
@@ -377,9 +284,8 @@ public class Mandel extends JFrame //extends Applet
             ymax=Double.parseDouble(tfYmax.getText());
             tfAktuell.setText(new Integer(aktuell).toString());
 		warten=true;
-		 bildflaeche.repaint();
-            berechne(punkte);
-            bildflaeche.repaint();
+			bildflaeche.reset();
+            berechne();
         }
     }
     class zurueckActionListener implements ActionListener
@@ -401,7 +307,7 @@ public class Mandel extends JFrame //extends Applet
                 tfYmax.setText(new Double (ymax).toString());
                 tfYmin.setText(new Double (ymin).toString());
                 tfAktuell.setText(new Integer(aktuell).toString());
-                berechne(punkte);
+                berechne();
                 bildflaeche.repaint();		
             }	
         }
@@ -428,22 +334,11 @@ public class Mandel extends JFrame //extends Applet
             tfYmax.setText(new Double (ymax).toString());
             tfYmin.setText(new Double (ymin).toString());
 		tfAktuell.setText(new Integer(aktuell).toString());
-            berechne(punkte);
+            berechne();
 		    bildflaeche.repaint();
         }            
     }
-/*
-    class WindowClosingListener extends WindowAdapter 
-    {
-	public void windowClosing (WindowEvent e) 
-	{
-        setVisible(false);
-        dispose();
-        System.exit(0);
-	}
-	
-}
-*/
+
     class kaestchenListener  extends MouseAdapter
     {
         public void mousePressed(MouseEvent mpe)
@@ -500,9 +395,7 @@ public class Mandel extends JFrame //extends Applet
                 bunt=true;
             }
             erzeugeFarben(meineFarben);
-            //Mandel.this.berechne(punkte);
-	    losmalen=true;
-		bildflaeche.repaint();
+            Mandel.this.berechne();
         }
     }
 }
