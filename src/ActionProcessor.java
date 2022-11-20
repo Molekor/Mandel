@@ -1,6 +1,8 @@
 import java.awt.Rectangle;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 
-public class ActionProcessor {
+public class ActionProcessor implements ComponentListener {
 
 	private Mandel mandel;
 	
@@ -31,5 +33,19 @@ public class ActionProcessor {
 	public void resetView() {
 		this.mandel.resetView();
 	}
+
+	@Override
+	public void componentResized(ComponentEvent e) {
+		this.mandel.canvasResized();
+	}
+
+	@Override
+	public void componentMoved(ComponentEvent e) {}
+
+	@Override
+	public void componentShown(ComponentEvent e) {}
+
+	@Override
+	public void componentHidden(ComponentEvent e) {}
 
 }

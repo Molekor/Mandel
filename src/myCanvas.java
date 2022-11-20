@@ -3,42 +3,32 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;
 
 /***************************************************************************/
 
+@SuppressWarnings("serial")
 class myCanvas extends JPanel
 {
 	/**
  * 
  */
-private final Mandel mandel;
 	private BufferedImage dbImage1,dbImage2;
 	private Graphics dbg1;
-	private Rectangle rectangle;
+	private Rectangle selectedArea;
 	
-	public myCanvas(Mandel mandel) 
+	public myCanvas(ComponentListener resizeListener) 
 	{
 		super();
-		this.mandel = mandel;
 		setBackground(Color.gray);
-		addComponentListener(new ComponentAdapter() 
-		{
-			public void componentResized(ComponentEvent evt) 
-			{
-				initGraphics();
-				myCanvas.this.mandel.breiteAnzeige = getWidth();
-				myCanvas.this.mandel.hoeheAnzeige = getHeight();
-				myCanvas.this.mandel.berechne();
-				myCanvas.this.repaint();
-			}
-		});
+		addComponentListener(resizeListener);
 	}
 
 	public void initGraphics() {
-		rectangle = null;
+		selectedArea = null;
 		dbImage1 = new BufferedImage(this.getSize().width, this.getSize().height, BufferedImage.TYPE_INT_ARGB);
 		dbg1 = dbImage1.getGraphics ();
 		dbImage2 = new BufferedImage(this.getSize().width, this.getSize().height, BufferedImage.TYPE_INT_ARGB);
@@ -52,10 +42,10 @@ private final Mandel mandel;
 		// Kopiere das Mandelbrot-Bild auf den Vordergrund
 		dbg1.drawImage(dbImage2,0,0,this);
 		//bei gedrücktem Mausknopf das weisse Rechteck über das 1. Hintergrundbild zeichnen
-		if (this.mandel.mousedown && rectangle != null)
+		if (selectedArea != null)
 		{
 			dbg1.setColor(Color.WHITE);
-			dbg1.drawRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);               
+			dbg1.drawRect(selectedArea.x, selectedArea.y, selectedArea.width, selectedArea.height);               
 		}
 		// Nun fertig gezeichnetes Bild auf dem richtigen Bildschirm anzeigen
 		g.drawImage (dbImage1, 0, 0, this);
@@ -66,7 +56,7 @@ private final Mandel mandel;
 	}
 
 	public void setSelection(Rectangle rectangle) {
-		this.rectangle = rectangle;
+		this.selectedArea = rectangle;
 	}
 	    
 }

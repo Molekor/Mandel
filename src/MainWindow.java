@@ -31,13 +31,12 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	Panel p25 = new Panel();
 	Panel p27 = new Panel();
 	CheckboxGroup cbg   = new CheckboxGroup();
-	Checkbox cb1        = new Checkbox(MainWindow.GRAYSCALE_LABEL,cbg,true);
-	Checkbox cb2        = new Checkbox("Mach bunt!",cbg,false);
+	Checkbox cb1        = new Checkbox(MainWindow.GRAYSCALE_LABEL,cbg,false);
+	Checkbox cb2        = new Checkbox("Mach bunt!",cbg,true);
 	Button bLos = new Button(MainWindow.GO);
 	Button bInit = new Button(MainWindow.NEW);
 	Button bZurueck = new Button(MainWindow.BACK);
 	ActionProcessor actionProcessor;
-	public boolean mousedown;
 	private KaestchenListener kaestchenListener;
 	private myCanvas pictureArea;
 	
@@ -51,8 +50,8 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
         p1.setLayout(new BorderLayout());
         p1.add(pictureArea,BorderLayout.CENTER);
         p2.setLayout(new GridLayout(1,0));
-        p25.add(cb1);
         p25.add(cb2);
+        p25.add(cb1);
         p27.add(bLos);
         p27.add(bInit);
         p27.add(bZurueck);
@@ -76,9 +75,14 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
     
 	private class KaestchenListener  extends MouseAdapter implements MouseMotionListener {
 		
-        public void mouseDragged(MouseEvent mde) {
-        	this.setSelection(mde);
-        }
+        public void mouseDragged(MouseEvent event) {
+            mx2=event.getX();
+            my2=event.getY();
+            MainWindow.this.actionProcessor.selectingArea(
+            		new Rectangle(mx1,my1,Math.abs(mx2-mx1),
+            				(int)((double)MainWindow.this.pictureArea.getHeight()*(double)(Math.abs(mx2-mx1)/(double)MainWindow.this.pictureArea.getWidth() )))
+            		);
+    	}
         
         public void mouseMoved(MouseEvent mme){}
         
@@ -88,21 +92,9 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
             MainWindow.this.actionProcessor.unselectArea();
         }
 	        
-        public void mouseReleased(MouseEvent mre) {
-            mousedown=false;
-            this.setSelection(mre);
-        }
-        
-        private void setSelection(MouseEvent event) {
-            mx2=event.getX();
-            my2=event.getY();
-            MainWindow.this.actionProcessor.selectingArea(
-            		new Rectangle(mx1,my1,mx2-mx1,
-            				(int)((double)MainWindow.this.pictureArea.getHeight()*(double)(Math.abs(mx2-mx1)/(double)MainWindow.this.pictureArea.getWidth() )))
-            		);
-        }
+        public void mouseReleased(MouseEvent mre) {}
 	}
-
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getActionCommand().equals(GO)) {

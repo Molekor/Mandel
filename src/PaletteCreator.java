@@ -8,9 +8,6 @@ public class PaletteCreator {
     	Random myRandom = new Random();
     	Color[] meineFarben = new Color[count];
         for (int i = 0; i < count; i++) {
-            if (!grayscale) {
-                meineFarben[i] = new Color(myRandom.nextInt(255),myRandom.nextInt(255),myRandom.nextInt(255));        
-            } else {
             	if(i<10) {
             		farbe += 5;
             	} else if(i<100) {
@@ -25,9 +22,12 @@ public class PaletteCreator {
                 {
                     farbe=0;
                 }
-                meineFarben[i]=new Color(farbe,farbe,farbe);
-                meineFarben[i]=new Color(farbe,farbe,farbe);
-            }
+                if(grayscale) {
+                	// meineFarben[i]=(i%2)==0?Color.BLACK:Color.white; // black/white intermittend
+                	meineFarben[i]= new Color(farbe,farbe,farbe);
+                } else {
+                	meineFarben[i]=new Color(Math.abs((150-farbe*1) % 255),Math.abs((128 - farbe*2) % 255),Math.abs((200-farbe*3) % 255));
+                }
         }
         meineFarben[count-1] = new Color(80,0,0);
         return meineFarben;
