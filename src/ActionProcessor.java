@@ -1,3 +1,4 @@
+import java.awt.Rectangle;
 
 public class ActionProcessor {
 
@@ -9,6 +10,18 @@ public class ActionProcessor {
 
 	public void paletteChange(boolean grayscale) {
 		this.mandel.changePalette(grayscale);
+	}
+
+	public void selectingArea(Rectangle rectangle) {
+		this.mandel.setAreaSelection(rectangle);
+	}
+
+	public void unselectArea() {
+		this.mandel.unselectArea();
+	}
+
+	public void startCalculation() {
+		this.mandel.startCalculation();
 	}
 
 }

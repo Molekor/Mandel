@@ -28,10 +28,11 @@ import java.util.Date;
 import java.util.Stack;
 public class Mandel {
 	MainWindow mainWindow;
-	int maxIter=10000;
+	int maxIter=1000;
 	Color[] meineFarben;
 	myCanvas bildflaeche;
 	private ActionProcessor actionProcessor;
+	private Rectangle selectedArea;
 	
 	int breiteAnzeige = 0;
     int hoeheAnzeige  = 0;
@@ -51,7 +52,7 @@ public class Mandel {
     
     
     public static void main (String[] args) {
-        Mandel myMandel = new Mandel();
+    	new Mandel();
     }
     
     public Mandel() {
@@ -70,10 +71,9 @@ public class Mandel {
     }
     
     public void berechne() {
-    	System.out.println("Starte Berechnung " + breiteAnzeige + " x " + hoeheAnzeige + " MaxIter: " + maxIter);
+    	System.out.println("Starte Berechnung X(" + xmin +"," + xmax+ ") Y(" + ymin + "," + ymax + ") " + breiteAnzeige + " x " + hoeheAnzeige + " MaxIter: " + maxIter);
 		int i;
-		double fx,fy,real,imaginary; //realQuad,imaginaryQuad;
-		double temp=0;	
+		double fx,fy;
 		myDate1 = new Date();		
 		xfaktor = Math.abs(xmax-xmin) / breiteAnzeige;
 		yfaktor = Math.abs(ymax-ymin) / hoeheAnzeige;
@@ -94,24 +94,6 @@ public class Mandel {
 		System.out.println("Rechenzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
 	}
 /***************************************************************************/
-    class losActionListener implements ActionListener
-    {
-        public void actionPerformed(ActionEvent e)
-        {
-            aktuell++;
-            xminHist.push(new Double(xmin));
-            yminHist.push(new Double(ymin));
-            xmaxHist.push(new Double(xmax));
-            ymaxHist.push(new Double(ymax));
-//            xmin=Double.parseDouble(tfXmin.getText());
-//            ymin=Double.parseDouble(tfYmin.getText());
-//            xmax=Double.parseDouble(tfXmax.getText());
-//            ymax=Double.parseDouble(tfYmax.getText());
-//            tfAktuell.setText(new Integer(aktuell).toString());
-			bildflaeche.initGraphics();
-            berechne();
-        }
-    }
     class zurueckActionListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
@@ -126,11 +108,6 @@ public class Mandel {
                 ymax=ymaxHist.pop();
                 xfaktor = Math.abs(xmax-xmin)/breiteAnzeige;
                 yfaktor = Math.abs(ymax-ymin)/hoeheAnzeige;
-//                tfXmax.setText(new Double(xmax).toString());
-//                tfXmin.setText(new Double(xmin).toString());
-//                tfYmax.setText(new Double (ymax).toString());
-//                tfYmin.setText(new Double (ymin).toString());
-//                tfAktuell.setText(new Integer(aktuell).toString());
                 bildflaeche.initGraphics();
                 berechne();	
             }	
@@ -153,70 +130,43 @@ public class Mandel {
 			yminHist.push(new Double(ymin));
 			xmaxHist.push(new Double(xmax));
 			ymaxHist.push(new Double(ymax));
-//            tfXmax.setText(new Double(xmax).toString());
-//            tfXmin.setText(new Double(xmin).toString());
-//            tfYmax.setText(new Double (ymax).toString());
-//            tfYmin.setText(new Double (ymin).toString());
-//            tfAktuell.setText(new Integer(aktuell).toString());
             bildflaeche.initGraphics();
             berechne();
 		    bildflaeche.repaint();
         }            
     }
-
-    class kaestchenListener  extends MouseAdapter
-    {
-        public void mousePressed(MouseEvent mpe)
-        {
-            mx1=mpe.getX();
-            my1=mpe.getY();
-            mx2=mx1;
-            my2=my1;
-            mousedown=true;
-            bildflaeche.setSelection(null);
-            bildflaeche.repaint();
-        }
-        public void mouseReleased(MouseEvent mre)
-        {
-            mousedown=false;
-            mx2=mre.getX();
-            my2=mre.getY();
-            System.out.println("xmin alt:"+xmin);
-            xfaktor = Math.abs(xmax-xmin)/breiteAnzeige;
-            yfaktor = Math.abs(ymax-ymin)/hoeheAnzeige;
-//            tfXmin.setText(new Double(xmin + xfaktor*mx1).toString());
-//            tfYmin.setText(new Double(ymin + yfaktor*my1).toString());
-//            tfXmax.setText(new Double(xmax - xfaktor*(breiteAnzeige-mx2)).toString());
-//            tfYmax.setText(new Double(ymax - yfaktor*(hoeheAnzeige-my2)).toString());		
-            System.out.println("xmin neu:"+xmin);
-            System.out.println("mouseReleased: Texte gesetzt:"+xmax+xmin+ymax+ymin);
-            bildflaeche.repaint();
-        }
-    }
-    
-    class zieher implements MouseMotionListener
-    {
-        public void mouseDragged(MouseEvent mde)
-        {
-            mx2=mde.getX();
-            my2=mde.getY();
-            bildflaeche.setSelection(new Rectangle(mx1,my1,Math.abs(mx2-mx1),Math.abs(my2-my1)));
-            bildflaeche.repaint();
-        }
-        
-        public void mouseMoved(MouseEvent mme){}    
-    }
-    
-    class CheckboxListener implements ItemListener
-    {
-        public void itemStateChanged (ItemEvent ie) {
-        	// ((String)ie.getItem()).equalsIgnoreCase("S / W"));
-        }
-    }
-    
+       
     public void changePalette(boolean grayscale) {
         bildflaeche.initGraphics();
         meineFarben = PaletteCreator.erzeugeFarben(maxIter, grayscale);
         Mandel.this.berechne();
     }
+
+	public void setAreaSelection(Rectangle rectangle) {
+		this.selectedArea = rectangle;
+		this.mousedown=true;
+		bildflaeche.setSelection(rectangle);
+		bildflaeche.repaint();
+	}
+
+	public void unselectArea() {
+		this.mousedown=false;
+		bildflaeche.repaint();	
+	}
+
+	public void startCalculation() {
+        aktuell++;
+        xminHist.push(new Double(xmin));
+        yminHist.push(new Double(ymin));
+        xmaxHist.push(new Double(xmax));
+        ymaxHist.push(new Double(ymax));
+        double xminOld = xmin;
+        xmin = xmin + (xmax-xmin)*(double)Mandel.this.selectedArea.x/(double)breiteAnzeige;
+        xmax = xminOld + (xmax-xmin)*(double)(Mandel.this.selectedArea.x + Mandel.this.selectedArea.width)/(double)breiteAnzeige;
+        double yminOld = ymin;
+        ymin = ymin + (ymax-ymin)*(double)Mandel.this.selectedArea.y/(double)hoeheAnzeige;
+        ymax = yminOld + (ymax-ymin)*(double)(Mandel.this.selectedArea.y + Mandel.this.selectedArea.height)/(double)hoeheAnzeige;
+		bildflaeche.initGraphics();
+        berechne();
+	}
 }
