@@ -14,6 +14,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.util.Stack;
 
 import javax.swing.JFrame;
 
@@ -22,6 +23,8 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	
 	private static final String GRAYSCALE_LABEL = "S / W";
 	private static final String GO = "Los";
+	private static final String NEW = "Neu";
+	private static final String BACK = "Zurück";
 	private int mx1, mx2, my1, my2;
 	Panel p1 = new Panel();
 	Panel p2 = new Panel();
@@ -31,8 +34,8 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	Checkbox cb1        = new Checkbox(MainWindow.GRAYSCALE_LABEL,cbg,true);
 	Checkbox cb2        = new Checkbox("Mach bunt!",cbg,false);
 	Button bLos = new Button(MainWindow.GO);
-	Button bInit = new Button("    Neu    ");
-	Button bZurueck = new Button(" Zurück ");
+	Button bInit = new Button(MainWindow.NEW);
+	Button bZurueck = new Button(MainWindow.BACK);
 	ActionProcessor actionProcessor;
 	public boolean mousedown;
 	private KaestchenListener kaestchenListener;
@@ -60,8 +63,8 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
         this.add(p2,BorderLayout.SOUTH);
         
         bLos.addActionListener(this);
-//        bInit.addActionListener(new initActionListener());
-//    	bZurueck.addActionListener(new zurueckActionListener());
+        bInit.addActionListener(this);
+    	bZurueck.addActionListener(this);
         cb1.addItemListener(this);
         cb2.addItemListener(this);
 	}
@@ -69,8 +72,8 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
     
     public void itemStateChanged (ItemEvent ie) {
     	this.actionProcessor.paletteChange(((String)ie.getItem()).equals(MainWindow.GRAYSCALE_LABEL));
-    }
-	  
+    } 
+    
 	private class KaestchenListener  extends MouseAdapter implements MouseMotionListener {
 		
         public void mouseDragged(MouseEvent mde) {
@@ -104,6 +107,11 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	public void actionPerformed(ActionEvent e) {
 		if(e.getActionCommand().equals(GO)) {
 			MainWindow.this.actionProcessor.startCalculation();
+		} else if(e.getActionCommand().equals(BACK)) {
+			MainWindow.this.actionProcessor.goBack();
+		} else if(e.getActionCommand().equals(NEW)) {
+			MainWindow.this.actionProcessor.resetView();
+
 		}
 	}
 }

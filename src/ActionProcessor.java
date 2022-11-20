@@ -24,4 +24,12 @@ public class ActionProcessor {
 		this.mandel.startCalculation();
 	}
 
+	public void goBack() {
+		this.mandel.goBack();
+	}
+
+	public void resetView() {
+		this.mandel.resetView();
+	}
+
 }

@@ -29,7 +29,7 @@ public class PaletteCreator {
                 meineFarben[i]=new Color(farbe,farbe,farbe);
             }
         }
-        meineFarben[count-1] = new Color(0,0,0);
+        meineFarben[count-1] = new Color(80,0,0);
         return meineFarben;
     }
 }
