@@ -91,7 +91,7 @@ public class Mandel {
 		    }
 		}
 		myDate2=new Date();
-		System.out.println("Rechenzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
+		//System.out.println("Rechenzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
 	}
 /***************************************************************************/
     class zurueckActionListener implements ActionListener
@@ -160,12 +160,15 @@ public class Mandel {
         yminHist.push(new Double(ymin));
         xmaxHist.push(new Double(xmax));
         ymaxHist.push(new Double(ymax));
-        double xminOld = xmin;
-        xmin = xmin + (xmax-xmin)*(double)Mandel.this.selectedArea.x/(double)breiteAnzeige;
-        xmax = xminOld + (xmax-xmin)*(double)(Mandel.this.selectedArea.x + Mandel.this.selectedArea.width)/(double)breiteAnzeige;
-        double yminOld = ymin;
-        ymin = ymin + (ymax-ymin)*(double)Mandel.this.selectedArea.y/(double)hoeheAnzeige;
-        ymax = yminOld + (ymax-ymin)*(double)(Mandel.this.selectedArea.y + Mandel.this.selectedArea.height)/(double)hoeheAnzeige;
+        double zoom = (double)Mandel.this.selectedArea.width / (double)breiteAnzeige;
+        double xPosFactor = (double)Mandel.this.selectedArea.x / (double)breiteAnzeige;
+        double xRange = xmax-xmin;
+        xmin = xmin + xRange * xPosFactor;
+        xmax = xmin + xRange * zoom;
+        double yPosFactor = (double)Mandel.this.selectedArea.y / (double)hoeheAnzeige;
+        double yRange = ymax - ymin;
+        ymin = ymin + yRange * yPosFactor;
+        ymax = ymin + yRange * zoom;
 		bildflaeche.initGraphics();
         berechne();
 	}

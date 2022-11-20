@@ -36,11 +36,13 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	ActionProcessor actionProcessor;
 	public boolean mousedown;
 	private KaestchenListener kaestchenListener;
+	private myCanvas pictureArea;
 	
 	public MainWindow(String title, myCanvas pictureArea, ActionProcessor actionProcessor) {
 		this.setTitle(title);
 		this.actionProcessor = actionProcessor;
 		this.kaestchenListener = new KaestchenListener();
+		this.pictureArea = pictureArea;
 		pictureArea.addMouseListener(kaestchenListener);
 		pictureArea.addMouseMotionListener(kaestchenListener);
         p1.setLayout(new BorderLayout());
@@ -60,8 +62,6 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
         bLos.addActionListener(this);
 //        bInit.addActionListener(new initActionListener());
 //    	bZurueck.addActionListener(new zurueckActionListener());
-//        pictureArea.addMouseListener(new kaestchenListener());
-//        pictureArea.addMouseMotionListener(new zieher());
         cb1.addItemListener(this);
         cb2.addItemListener(this);
 	}
@@ -74,9 +74,7 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	private class KaestchenListener  extends MouseAdapter implements MouseMotionListener {
 		
         public void mouseDragged(MouseEvent mde) {
-            mx2=mde.getX();
-            my2=mde.getY();
-            MainWindow.this.actionProcessor.selectingArea(new Rectangle(mx1,my1,mx2-mx1, my2-my1));
+        	this.setSelection(mde);
         }
         
         public void mouseMoved(MouseEvent mme){}
@@ -89,9 +87,16 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	        
         public void mouseReleased(MouseEvent mre) {
             mousedown=false;
-            mx2=mre.getX();
-            my2=mre.getY();
-            MainWindow.this.actionProcessor.selectingArea(new Rectangle(mx1,my1,mx2-mx1, my2-my1));
+            this.setSelection(mre);
+        }
+        
+        private void setSelection(MouseEvent event) {
+            mx2=event.getX();
+            my2=event.getY();
+            MainWindow.this.actionProcessor.selectingArea(
+            		new Rectangle(mx1,my1,mx2-mx1,
+            				(int)((double)MainWindow.this.pictureArea.getHeight()*(double)(Math.abs(mx2-mx1)/(double)MainWindow.this.pictureArea.getWidth() )))
+            		);
         }
 	}
 
@@ -100,6 +105,5 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 		if(e.getActionCommand().equals(GO)) {
 			MainWindow.this.actionProcessor.startCalculation();
 		}
-		System.out.println(e.toString());
 	}
 }
