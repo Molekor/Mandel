@@ -17,18 +17,17 @@ Umstellen auf BigDecimal!
 */
 import java.awt.Color;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Date;
 import java.util.Stack;
+
 public class Mandel {
+	
 	private MainWindow mainWindow;
 	private int maxIter=10000;
 	private Color[] meineFarben;
 	private myCanvas bildflaeche;
 	private ActionProcessor actionProcessor;
 	private Rectangle selectedArea;
-
 	public final double XMIN_START = -3.;
 	public final double XMAX_START = 2.;
 	private double xmin;
@@ -36,15 +35,12 @@ public class Mandel {
 	private double ymin;
 	private double ymax;
 	private double xfaktor=0,yfaktor=0;
-	private int mx1,mx2,my1,my2,aktuell=0;
-	private boolean bunt=true, firstDraw=true;
+	private boolean firstDraw=true;
 	private Stack<Double> xminHist = new Stack <Double>();
 	private Stack<Double> xmaxHist = new Stack <Double>();
 	private Stack<Double> yminHist = new Stack <Double>();
 	private Stack<Double> ymaxHist = new Stack <Double>();
-	private Date myDate1,myDate2,myDate3;
-/***************************************************************************/
-    
+	private Date myDate1,myDate2;  
     
     public static void main (String[] args) {
     	new Mandel();
@@ -58,7 +54,6 @@ public class Mandel {
     	this.mainWindow.setLocation(10,10);
     	this.mainWindow.setVisible(true);
         meineFarben = PaletteCreator.erzeugeFarben(maxIter, false);
-        //this.adjustXYtoCanvas(true);
     }
     
     public void berechne() {
@@ -67,12 +62,7 @@ public class Mandel {
 		int i;
 		double fx,fy;
     	System.out.println("Starte Berechnung X(" + xmin +"," + xmax+ ") Y(" + ymin + "," + ymax + ") " + breiteAnzeige + " x " + hoeheAnzeige + " MaxIter: " + maxIter);
-        aktuell++;
-        xminHist.push(new Double(xmin));
-        yminHist.push(new Double(ymin));
-        xmaxHist.push(new Double(xmax));
-        ymaxHist.push(new Double(ymax));
-        if(this.selectedArea != null) {
+        if (this.selectedArea != null) {
 	        double zoom = (double)Mandel.this.selectedArea.width / (double)breiteAnzeige;
 	        double xPosFactor = (double)Mandel.this.selectedArea.x / (double)breiteAnzeige;
 	        double xRange = xmax-xmin;
@@ -87,10 +77,8 @@ public class Mandel {
 		myDate1 = new Date();		
 		xfaktor = Math.abs(xmax-xmin) / breiteAnzeige;
 		yfaktor = Math.abs(ymax-ymin) / hoeheAnzeige;
-		for (int px = 1 ; px < breiteAnzeige ; px++)
-		{
-		    for (int py = 1 ; py < hoeheAnzeige ; py++)
-		    {
+		for (int px = 1 ; px < breiteAnzeige ; px++) {
+		    for (int py = 1 ; py < hoeheAnzeige ; py++) {
 				fx= ((double)px*xfaktor)+(xmin);
 		        fy = ((double)py*yfaktor)+(ymin);
 		        i = PointCalculator.getIterationsForPoint(fx, fy, maxIter);
@@ -100,7 +88,7 @@ public class Mandel {
                 }
 		    }
 		}
-		myDate2=new Date();
+		myDate2 = new Date();
 		System.out.println("Rechenzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
 	}
        
@@ -123,16 +111,17 @@ public class Mandel {
 	}
 
 	public void startCalculation() {
+        xminHist.push(new Double(xmin));
+        yminHist.push(new Double(ymin));
+        xmaxHist.push(new Double(xmax));
+        ymaxHist.push(new Double(ymax));
 		bildflaeche.initGraphics();
 	    berechne();
 	}
 
 	public void goBack() {
 		
-        if (!xminHist.empty())
-        {
-            aktuell--;
-            System.out.println("Gehe zurück...");
+        if (!xminHist.empty()) {
             xmin=xminHist.pop();
             xmax=xmaxHist.pop();
             ymin=yminHist.pop();
@@ -146,7 +135,6 @@ public class Mandel {
 	public void resetView() {
 		this.firstDraw=true;
 		this.adjustXYtoCanvas();
-    	aktuell=0;
 		xminHist = new Stack <Double>();
 		xmaxHist = new Stack <Double>();
 		yminHist = new Stack <Double>();
@@ -158,7 +146,6 @@ public class Mandel {
 		this.selectedArea = null;
         bildflaeche.initGraphics();
         berechne();
-	    //bildflaeche.repaint();
 	}
 
 	public void canvasResized() {
@@ -166,21 +153,18 @@ public class Mandel {
 		this.bildflaeche.initGraphics();
 		this.adjustXYtoCanvas();
 		this.berechne();
-		this.bildflaeche.repaint();
 	}
 
 	private void adjustXYtoCanvas() {
 		double aspectRatio = (double)this.bildflaeche.getHeight() / (double) this.bildflaeche.getWidth();
 		if(this.firstDraw) {
-			System.out.println("Initialize x,y values for new canvas:");
 			this.firstDraw = false;
 			xmin = this.XMIN_START;
 			xmax = this.XMAX_START;
 			ymin = ((xmin - xmax) * aspectRatio) /2;
 			ymax = -ymin;
 		} else {
-			System.out.println("Calculate new x,y values for resized canvas:");
-			// Keep the x-range and the top y value and scale the bottom y-range to the new aspect ratio
+			// Keep the x-range and scale the y-range to the new aspect ratio
 			double middle = (ymax + ymin) / 2;
 			ymin = middle - (xmax-xmin)*aspectRatio/2;
 			ymax = middle + (xmax-xmin)*aspectRatio/2;
