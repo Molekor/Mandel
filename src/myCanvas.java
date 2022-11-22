@@ -23,18 +23,19 @@ class myCanvas extends JPanel
 	public myCanvas(ComponentListener resizeListener) 
 	{
 		super();
-		setBackground(Color.gray);
+		setBackground(Color.BLACK);
 		addComponentListener(resizeListener);
 	}
 
 	public void initGraphics() {
 		selectedArea = null;
+		// TODO: use the writableRaster for the image?
 		dbImage1 = new BufferedImage(this.getSize().width, this.getSize().height, BufferedImage.TYPE_INT_ARGB);
 		dbg1 = dbImage1.getGraphics ();
 		dbImage2 = new BufferedImage(this.getSize().width, this.getSize().height, BufferedImage.TYPE_INT_ARGB);
-		dbImage2.getGraphics().setColor(Color.GRAY);
-		dbImage2.getGraphics().fillRect(1, 1, this.getSize().width, this.getSize().height);
-		this.paintImmediately(1,1,this.getSize().width, this.getSize().height);
+		dbImage2.getGraphics().setColor(Color.BLACK);
+		dbImage2.getGraphics().fillRect(1, 1, 10000,10000);//dbImage2.getWidth(), dbImage2.getHeight());
+		//this.paintImmediately(1,1,this.getSize().width, this.getSize().height);
 	}
 
 	public void paint (Graphics g)	
@@ -44,7 +45,7 @@ class myCanvas extends JPanel
 		//bei gedrücktem Mausknopf das weisse Rechteck über das 1. Hintergrundbild zeichnen
 		if (selectedArea != null)
 		{
-			dbg1.setColor(Color.WHITE);
+			dbg1.setColor(Color.RED);
 			dbg1.drawRect(selectedArea.x, selectedArea.y, selectedArea.width, selectedArea.height);               
 		}
 		// Nun fertig gezeichnetes Bild auf dem richtigen Bildschirm anzeigen

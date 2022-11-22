@@ -16,11 +16,12 @@ Umstellen auf BigDecimal!
 
 */
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Date;
 import java.util.Stack;
 
-public class Mandel {
+public class Mandel implements PixelCalculationObserver {
 	
 	private MainWindow mainWindow;
 	private int maxIter=10000;
@@ -40,29 +41,36 @@ public class Mandel {
 	private Stack<Double> xmaxHist = new Stack <Double>();
 	private Stack<Double> yminHist = new Stack <Double>();
 	private Stack<Double> ymaxHist = new Stack <Double>();
-	private Date myDate1,myDate2;  
+	private Date myDate1,myDate2;
+	private ThreadCoordinator threadCoordinator;  
     
+	private int tmpCounter=0;
+	
     public static void main (String[] args) {
     	new Mandel();
     }
     
     public Mandel() {
+    	System.out.println("STARTING MANDEL:"+Thread.currentThread().getPriority());
     	this.actionProcessor = new ActionProcessor(this);
     	bildflaeche = new myCanvas(this.actionProcessor);
     	this.mainWindow = new MainWindow("Jos buntes Mandelbrotmengenprogramm", bildflaeche, actionProcessor);
-    	this.mainWindow.setSize(900,600);
-    	this.mainWindow.setLocation(10,10);
+    	this.mainWindow.setSize(500,400);
+    	this.mainWindow.setLocation(1,1);
     	this.mainWindow.setVisible(true);
         meineFarben = PaletteCreator.erzeugeFarben(maxIter, false);
+        this.threadCoordinator = new ThreadCoordinator(this);
     }
     
     public void berechne() {
-    	int breiteAnzeige = bildflaeche.getWidth();
+       	int breiteAnzeige = bildflaeche.getWidth();
     	int hoeheAnzeige = bildflaeche.getHeight(); 
 		int i;
 		double fx,fy;
-    	System.out.println("Starte Berechnung X(" + xmin +"," + xmax+ ") Y(" + ymin + "," + ymax + ") " + breiteAnzeige + " x " + hoeheAnzeige + " MaxIter: " + maxIter);
-        if (this.selectedArea != null) {
+    	System.out.println("Starte Berechnung X(" + xmin +"," + xmax+ ") Y(" + ymin + "," + ymax + ") "
+		+ breiteAnzeige + " x " + hoeheAnzeige + " = " + (breiteAnzeige*hoeheAnzeige) + " MaxIter: " + maxIter);
+        // If a new section is selected, zoom in on it before calculation
+    	if (this.selectedArea != null) {
 	        double zoom = (double)Mandel.this.selectedArea.width / (double)breiteAnzeige;
 	        double xPosFactor = (double)Mandel.this.selectedArea.x / (double)breiteAnzeige;
 	        double xRange = xmax-xmin;
@@ -74,24 +82,21 @@ public class Mandel {
 	        ymax = ymin + yRange * zoom;
 	        this.selectedArea = null;
         }
+    	
 		myDate1 = new Date();		
-		xfaktor = Math.abs(xmax-xmin) / breiteAnzeige;
-		yfaktor = Math.abs(ymax-ymin) / hoeheAnzeige;
-		for (int px = 1 ; px < breiteAnzeige ; px++) {
-		    for (int py = 1 ; py < hoeheAnzeige ; py++) {
-				fx= ((double)px*xfaktor)+(xmin);
-		        fy = ((double)py*yfaktor)+(ymin);
-		        i = PointCalculator.getIterationsForPoint(fx, fy, maxIter);
-                bildflaeche.setPixel(px,py,meineFarben[i-1]);
-                if((px % 5 ==0) && (py== hoeheAnzeige - 1)) {
-                	bildflaeche.paintImmediately(px-5,1,5,bildflaeche.getHeight());
-                }
-		    }
-		}
+		this.threadCoordinator.setPriority(Thread.MIN_PRIORITY);
+		this.threadCoordinator.startCalculation(breiteAnzeige, hoeheAnzeige, xmin, xmax, ymin, ymax, maxIter);
+		this.threadCoordinator.run();
 		myDate2 = new Date();
 		System.out.println("Rechenzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
+		this.bildflaeche.repaint();
 	}
        
+    public synchronized void pixelCalculationComplete(Point pixel, int iterations) {
+        bildflaeche.setPixel(pixel.x,pixel.y,meineFarben[iterations-1]);
+        bildflaeche.repaint();
+    }
+    
     public void changePalette(boolean grayscale) {
         bildflaeche.initGraphics();
         meineFarben = PaletteCreator.erzeugeFarben(maxIter, grayscale);
@@ -120,7 +125,6 @@ public class Mandel {
 	}
 
 	public void goBack() {
-		
         if (!xminHist.empty()) {
             xmin=xminHist.pop();
             xmax=xmaxHist.pop();
