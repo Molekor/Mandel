@@ -18,7 +18,6 @@ Umstellen auf BigDecimal!
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.util.Date;
 import java.util.Stack;
 
 public class Mandel implements PixelCalculationObserver {
@@ -26,7 +25,7 @@ public class Mandel implements PixelCalculationObserver {
 	private MainWindow mainWindow;
 	private int maxIter=10000;
 	private Color[] meineFarben;
-	private myCanvas bildflaeche;
+	private MyCanvas bildflaeche;
 	private ActionProcessor actionProcessor;
 	private Rectangle selectedArea;
 	public final double XMIN_START = -3.;
@@ -35,16 +34,12 @@ public class Mandel implements PixelCalculationObserver {
 	private double xmax;
 	private double ymin;
 	private double ymax;
-	private double xfaktor=0,yfaktor=0;
 	private boolean firstDraw=true;
 	private Stack<Double> xminHist = new Stack <Double>();
 	private Stack<Double> xmaxHist = new Stack <Double>();
 	private Stack<Double> yminHist = new Stack <Double>();
 	private Stack<Double> ymaxHist = new Stack <Double>();
-	private Date myDate1,myDate2;
 	private ThreadCoordinator threadCoordinator;  
-    
-	private int tmpCounter=0;
 	
     public static void main (String[] args) {
     	new Mandel();
@@ -53,7 +48,7 @@ public class Mandel implements PixelCalculationObserver {
     public Mandel() {
     	System.out.println("STARTING MANDEL:"+Thread.currentThread().getPriority());
     	this.actionProcessor = new ActionProcessor(this);
-    	bildflaeche = new myCanvas(this.actionProcessor);
+    	bildflaeche = new MyCanvas(this.actionProcessor);
     	this.mainWindow = new MainWindow("Jos buntes Mandelbrotmengenprogramm", bildflaeche, actionProcessor);
     	this.mainWindow.setSize(500,400);
     	this.mainWindow.setLocation(1,1);
@@ -65,10 +60,6 @@ public class Mandel implements PixelCalculationObserver {
     public void berechne() {
        	int breiteAnzeige = bildflaeche.getWidth();
     	int hoeheAnzeige = bildflaeche.getHeight(); 
-		int i;
-		double fx,fy;
-    	System.out.println("Starte Berechnung X(" + xmin +"," + xmax+ ") Y(" + ymin + "," + ymax + ") "
-		+ breiteAnzeige + " x " + hoeheAnzeige + " = " + (breiteAnzeige*hoeheAnzeige) + " MaxIter: " + maxIter);
         // If a new section is selected, zoom in on it before calculation
     	if (this.selectedArea != null) {
 	        double zoom = (double)Mandel.this.selectedArea.width / (double)breiteAnzeige;
@@ -82,13 +73,10 @@ public class Mandel implements PixelCalculationObserver {
 	        ymax = ymin + yRange * zoom;
 	        this.selectedArea = null;
         }
-    	
-		myDate1 = new Date();		
-		this.threadCoordinator.setPriority(Thread.MIN_PRIORITY);
-		this.threadCoordinator.startCalculation(breiteAnzeige, hoeheAnzeige, xmin, xmax, ymin, ymax, maxIter);
+    	System.out.println("Starte Berechnung X(" + xmin +"," + xmax+ ") Y(" + ymin + "," + ymax + ") "
+		+ breiteAnzeige + " x " + hoeheAnzeige + " = " + (breiteAnzeige*hoeheAnzeige) + " MaxIter: " + maxIter);
+    	this.threadCoordinator.startCalculation(breiteAnzeige, hoeheAnzeige, xmin, xmax, ymin, ymax, maxIter);
 		this.threadCoordinator.run();
-		myDate2 = new Date();
-		System.out.println("Rechenzeit: "+((myDate2.getTime()-myDate1.getTime()))+" millisek");
 		this.bildflaeche.repaint();
 	}
        
@@ -116,10 +104,10 @@ public class Mandel implements PixelCalculationObserver {
 	}
 
 	public void startCalculation() {
-        xminHist.push(new Double(xmin));
-        yminHist.push(new Double(ymin));
-        xmaxHist.push(new Double(xmax));
-        ymaxHist.push(new Double(ymax));
+        xminHist.push(Double.valueOf(xmin));
+        yminHist.push(Double.valueOf(ymin));
+        xmaxHist.push(Double.valueOf(xmax));
+        ymaxHist.push(Double.valueOf(ymax));
 		bildflaeche.initGraphics();
 	    berechne();
 	}
@@ -137,16 +125,17 @@ public class Mandel implements PixelCalculationObserver {
 	}
 
 	public void resetView() {
+		meineFarben = PaletteCreator.erzeugeFarben(maxIter, false);
 		this.firstDraw=true;
 		this.adjustXYtoCanvas();
 		xminHist = new Stack <Double>();
 		xmaxHist = new Stack <Double>();
 		yminHist = new Stack <Double>();
 		ymaxHist = new Stack <Double>();
-		xminHist.push(new Double(xmin));
-		yminHist.push(new Double(ymin));
-		xmaxHist.push(new Double(xmax));
-		ymaxHist.push(new Double(ymax));
+		xminHist.push(Double.valueOf(xmin));
+		yminHist.push(Double.valueOf(ymin));
+		xmaxHist.push(Double.valueOf(xmax));
+		ymaxHist.push(Double.valueOf(ymax));
 		this.selectedArea = null;
         bildflaeche.initGraphics();
         berechne();

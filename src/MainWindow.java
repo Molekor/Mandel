@@ -3,10 +3,8 @@ import java.awt.Button;
 import java.awt.Checkbox;
 import java.awt.CheckboxGroup;
 import java.awt.GridLayout;
-import java.awt.Label;
 import java.awt.Panel;
 import java.awt.Rectangle;
-import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -14,7 +12,6 @@ import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.util.Stack;
 
 import javax.swing.JFrame;
 
@@ -25,7 +22,7 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	private static final String GO = "Los";
 	private static final String NEW = "Neu";
 	private static final String BACK = "Zurück";
-	private int mx1, mx2, my1, my2;
+	private int mx1, mx2, my1;
 	Panel p1 = new Panel();
 	Panel p2 = new Panel();
 	Panel p25 = new Panel();
@@ -38,9 +35,9 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 	Button bZurueck = new Button(MainWindow.BACK);
 	ActionProcessor actionProcessor;
 	private KaestchenListener kaestchenListener;
-	private myCanvas pictureArea;
+	private MyCanvas pictureArea;
 	
-	public MainWindow(String title, myCanvas pictureArea, ActionProcessor actionProcessor) {
+	public MainWindow(String title, MyCanvas pictureArea, ActionProcessor actionProcessor) {
 		this.setTitle(title);
 		this.actionProcessor = actionProcessor;
 		this.kaestchenListener = new KaestchenListener();
@@ -77,7 +74,6 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
 		
         public void mouseDragged(MouseEvent event) {
             mx2=event.getX();
-            my2=event.getY();
             MainWindow.this.actionProcessor.selectingArea(
             		new Rectangle(mx1,my1,Math.abs(mx2-mx1),
             				(int)((double)MainWindow.this.pictureArea.getHeight()*(double)(Math.abs(mx2-mx1)/(double)MainWindow.this.pictureArea.getWidth() )))
@@ -92,7 +88,11 @@ public class MainWindow  extends JFrame implements ItemListener, ActionListener 
             MainWindow.this.actionProcessor.unselectArea();
         }
 	        
-        public void mouseReleased(MouseEvent mre) {}
+        public void mouseReleased(MouseEvent mre) {
+        	if(mre.getX() != mx1) {
+        		MainWindow.this.actionProcessor.startCalculation();
+        	}
+        }
 	}
 	
 	@Override

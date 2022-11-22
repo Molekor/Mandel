@@ -1,72 +1,86 @@
 import java.awt.Point;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 public class ThreadCoordinator extends Thread {
 
 	private PixelCalculationObserver observer;
-	private int width;
-	private int height;
 	private int maxIter;
-	private double xmin; 
-	private double xmax;
-	private double ymin;
-	private double ymax;
+	ExecutorService executor;
+	Vector<PointCalculator> workers = new Vector<>();
+	Vector<PointMapping> pointMappings = new Vector<>();
+	Iterator<PointMapping> pointMappingsIterator;
+	
 	
 	public ThreadCoordinator(PixelCalculationObserver observer) {
 		this.observer = observer;
+		executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new SimpleThreadFactory());
+		workers = new Vector<>(); 
 	}
 	
 	
 	public void startCalculation(int width, int height, double xmin, double xmax, double ymin, double ymax, int maxIter) {
-		this.width=width;
-		this.height=height;
-		this.xmin = xmin;
-		this.xmax=xmax;
-		this.ymax=ymax;
-		this.ymin=ymin;
 		this.maxIter=maxIter;
-	}
-
-
-	@Override
-	public void run() {
-		System.out.println("ThreadCoordinator RUN:"+this.getPriority());
-
-		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new SimpleThreadFactory());
-		Vector<Runnable> workers = new Vector<>(); 
-		double xfaktor = Math.abs(xmax-xmin) / width;
-		double yfaktor = Math.abs(ymax-ymin) / height;
+		synchronized(this) {
+		pointMappings.clear();
 		for (int px = 1 ; px < width ; px++) {
 		    for (int py = 1 ; py < height ; py++) {
+				double xfaktor = Math.abs(xmax-xmin) / width;
+				double yfaktor = Math.abs(ymax-ymin) / height;
 				double fx= ((double)px*xfaktor)+(xmin);
 		        double fy = ((double)py*yfaktor)+(ymin);
-		    	Runnable worker = new PointCalculator(fx,fy, new Point(px,py), maxIter, observer);
-		    	workers.add(worker);
+		        pointMappings.add(new PointMapping(new Point(px,py),fx,fy));
 		    }
 		}
-		Collections.shuffle(workers);
-		for(Runnable worker:workers){
-			executor.execute(worker);
+		Collections.shuffle(pointMappings);
+		pointMappingsIterator = pointMappings.iterator();
 		}
-//		System.out.println("EXECUTOR:" + executor.toString());
-//		executor.shutdown();
-//		try {
-//			executor.awaitTermination(20,TimeUnit.SECONDS);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-		System.out.println("EXECUTOR TERMINATED");
+	}
+
+	public PointMapping getNextPoinMapping() {
+		if(pointMappingsIterator.hasNext()) {
+			return pointMappingsIterator.next();
+		} else {
+			return null;
+		}
+	}
+	
+	@Override
+	public void run() {
+		for(int i=1; i < Runtime.getRuntime().availableProcessors(); i++) {
+			executor.execute(new Calculator(observer,maxIter));
+		}
 	}
 	  private class SimpleThreadFactory implements ThreadFactory {
-		    public Thread newThread(Runnable r) {
-		      Thread thread = new Thread(r);
-		      thread.setPriority(MIN_PRIORITY);
-		      return thread;
-		    }
-		  };
+	    public Thread newThread(Runnable r) {
+	      Thread thread = new Thread(r);
+	      thread.setPriority(MIN_PRIORITY);
+	      return thread;
+	    }
+	  };
+	  
+	  private class Calculator implements Runnable {
+		
+		 private PixelCalculationObserver observer;
+		 int maxIter;
+		public Calculator(PixelCalculationObserver observer, int maxIter) {
+			 this.observer = observer;
+			 this.maxIter=maxIter;
+		 }
+		
+		@Override
+		public void run() {
+			PointMapping data = ThreadCoordinator.this.getNextPoinMapping();
+			while (data!= null) {
+				observer.pixelCalculationComplete(data.point, PointCalculator.getIterationsForPoint(data.fx, data.fy, maxIter));
+				synchronized(ThreadCoordinator.this) {
+					data = ThreadCoordinator.this.getNextPoinMapping();
+				}
+			}
+		}
+		  
+	  }
 }

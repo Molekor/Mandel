@@ -6,9 +6,9 @@ public class PaletteCreator {
     public static Color[] erzeugeFarben(int count, boolean grayscale) {
     	int farbe=0;
     	Random myRandom = new Random();
-    	int r=myRandom.nextInt(1,60);
-    	int g=myRandom.nextInt(60,150);
-    	int b=myRandom.nextInt(30,90);
+    	int r=myRandom.nextInt(1,255);
+    	int g=myRandom.nextInt(1,255);
+    	int b=myRandom.nextInt(1,255);
     	boolean rUp=true;
     	boolean gUp=false;
     	boolean bUp=true;
