@@ -1,4 +1,7 @@
 import java.awt.Point;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
@@ -13,7 +16,7 @@ public class ThreadCoordinator extends Thread {
 	Vector<PointCalculator> workers = new Vector<>();
 	Vector<PointMapping> pointMappings = new Vector<>();
 	Iterator<PointMapping> pointMappingsIterator;
-	
+	MathContext mc = new MathContext(Mandel.PRECISION, RoundingMode.HALF_UP);
 	
 	public ThreadCoordinator(PixelCalculationObserver observer) {
 		this.observer = observer;
@@ -22,20 +25,21 @@ public class ThreadCoordinator extends Thread {
 	}
 	
 	
-	public void startCalculation(int width, int height, double xmin, double xmax, double ymin, double ymax, int maxIter) {
+	public void startCalculation(int width, int height, BigDecimal xmin, BigDecimal xmax, BigDecimal ymin, BigDecimal ymax, int maxIter) {
 		this.maxIter=maxIter;
 		synchronized(this) {
 		pointMappings.clear();
 		for (int px = 1 ; px < width ; px++) {
 		    for (int py = 1 ; py < height ; py++) {
-				double xfaktor = Math.abs(xmax-xmin) / width;
-				double yfaktor = Math.abs(ymax-ymin) / height;
-				double fx= ((double)px*xfaktor)+(xmin);
-		        double fy = ((double)py*yfaktor)+(ymin);
+		    	BigDecimal xfaktor = xmax.subtract(xmin).divide(new BigDecimal(width), mc).abs();
+		    	BigDecimal yfaktor = ymax.subtract(ymin).divide(new BigDecimal(height), mc).abs();
+		    	BigDecimal fx = xmin.add(xfaktor.multiply(new BigDecimal(px), mc));
+		    	BigDecimal fy = ymin.add(yfaktor.multiply(new BigDecimal(py), mc));
 		        pointMappings.add(new PointMapping(new Point(px,py),fx,fy));
 		    }
 		}
 		Collections.shuffle(pointMappings);
+		System.out.println("# of Points to compute:" + pointMappings.size());
 		pointMappingsIterator = pointMappings.iterator();
 		}
 	}

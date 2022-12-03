@@ -18,28 +18,36 @@ Umstellen auf BigDecimal!
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Stack;
 
 public class Mandel implements PixelCalculationObserver {
 	
+	public static final int PRECISION = 25;
+	MathContext mc = new MathContext(Mandel.PRECISION, RoundingMode.HALF_UP);
 	private MainWindow mainWindow;
-	private int maxIter=10000;
+	private int maxIter=1000;
 	private Color[] meineFarben;
 	private MyCanvas bildflaeche;
 	private ActionProcessor actionProcessor;
 	private Rectangle selectedArea;
-	public final double XMIN_START = -3.;
-	public final double XMAX_START = 2.;
-	private double xmin;
-	private double xmax;
-	private double ymin;
-	private double ymax;
+	public final BigDecimal XMIN_START = BigDecimal.valueOf(-3.);
+	public final BigDecimal XMAX_START = BigDecimal.valueOf(2.);
+	private BigDecimal xmin;
+	private BigDecimal xmax;
+	private BigDecimal ymin;
+	private BigDecimal ymax;
 	private boolean firstDraw=true;
-	private Stack<Double> xminHist = new Stack <Double>();
-	private Stack<Double> xmaxHist = new Stack <Double>();
-	private Stack<Double> yminHist = new Stack <Double>();
-	private Stack<Double> ymaxHist = new Stack <Double>();
+	private Stack<BigDecimal> xminHist = new Stack <>();
+	private Stack<BigDecimal> xmaxHist = new Stack <>();
+	private Stack<BigDecimal> yminHist = new Stack <>();
+	private Stack<BigDecimal> ymaxHist = new Stack <>();
 	private ThreadCoordinator threadCoordinator;  
+	
+	
+	private int calccount=0;
 	
     public static void main (String[] args) {
     	new Mandel();
@@ -47,14 +55,15 @@ public class Mandel implements PixelCalculationObserver {
     
     public Mandel() {
     	System.out.println("STARTING MANDEL:"+Thread.currentThread().getPriority());
+    	this.threadCoordinator = new ThreadCoordinator(this);
     	this.actionProcessor = new ActionProcessor(this);
     	bildflaeche = new MyCanvas(this.actionProcessor);
     	this.mainWindow = new MainWindow("Jos buntes Mandelbrotmengenprogramm", bildflaeche, actionProcessor);
-    	this.mainWindow.setSize(500,400);
+    	this.mainWindow.setSize(800,600);
     	this.mainWindow.setLocation(1,1);
     	this.mainWindow.setVisible(true);
         meineFarben = PaletteCreator.erzeugeFarben(maxIter, false);
-        this.threadCoordinator = new ThreadCoordinator(this);
+        
     }
     
     public void berechne() {
@@ -62,15 +71,15 @@ public class Mandel implements PixelCalculationObserver {
     	int hoeheAnzeige = bildflaeche.getHeight(); 
         // If a new section is selected, zoom in on it before calculation
     	if (this.selectedArea != null) {
-	        double zoom = (double)Mandel.this.selectedArea.width / (double)breiteAnzeige;
-	        double xPosFactor = (double)Mandel.this.selectedArea.x / (double)breiteAnzeige;
-	        double xRange = xmax-xmin;
-	        xmin = xmin + xRange * xPosFactor;
-	        xmax = xmin + xRange * zoom;
-	        double yPosFactor = (double)Mandel.this.selectedArea.y / (double)hoeheAnzeige;
-	        double yRange = ymax - ymin;
-	        ymin = ymin + yRange * yPosFactor;
-	        ymax = ymin + yRange * zoom;
+	        BigDecimal zoom = new BigDecimal(Mandel.this.selectedArea.width).divide(new BigDecimal(breiteAnzeige), mc);
+	        BigDecimal xPosFactor = new BigDecimal(Mandel.this.selectedArea.x).divide(new BigDecimal(breiteAnzeige), mc);
+	        BigDecimal xRange = xmax.subtract(xmin);
+	        xmin = xmin.add(xRange.multiply(xPosFactor, mc));
+	        xmax = xmin.add(xRange.multiply(zoom, mc));
+	        BigDecimal yPosFactor = new BigDecimal(Mandel.this.selectedArea.y).divide(new BigDecimal(hoeheAnzeige), mc);
+	        BigDecimal yRange = ymax.subtract(ymin);
+	        ymin = ymin.add(yRange.multiply(yPosFactor, mc));
+	        ymax = ymin.add(yRange.multiply(zoom, mc));
 	        this.selectedArea = null;
         }
     	System.out.println("Starte Berechnung X(" + xmin +"," + xmax+ ") Y(" + ymin + "," + ymax + ") "
@@ -81,6 +90,7 @@ public class Mandel implements PixelCalculationObserver {
 	}
        
     public synchronized void pixelCalculationComplete(Point pixel, int iterations) {
+    	this.calccount++;
         bildflaeche.setPixel(pixel.x,pixel.y,meineFarben[iterations-1]);
         bildflaeche.repaint();
     }
@@ -104,10 +114,10 @@ public class Mandel implements PixelCalculationObserver {
 	}
 
 	public void startCalculation() {
-        xminHist.push(Double.valueOf(xmin));
-        yminHist.push(Double.valueOf(ymin));
-        xmaxHist.push(Double.valueOf(xmax));
-        ymaxHist.push(Double.valueOf(ymax));
+        xminHist.push((xmin));
+        yminHist.push(ymin);
+        xmaxHist.push(xmax);
+        ymaxHist.push(ymax);
 		bildflaeche.initGraphics();
 	    berechne();
 	}
@@ -128,14 +138,14 @@ public class Mandel implements PixelCalculationObserver {
 		meineFarben = PaletteCreator.erzeugeFarben(maxIter, false);
 		this.firstDraw=true;
 		this.adjustXYtoCanvas();
-		xminHist = new Stack <Double>();
-		xmaxHist = new Stack <Double>();
-		yminHist = new Stack <Double>();
-		ymaxHist = new Stack <Double>();
-		xminHist.push(Double.valueOf(xmin));
-		yminHist.push(Double.valueOf(ymin));
-		xmaxHist.push(Double.valueOf(xmax));
-		ymaxHist.push(Double.valueOf(ymax));
+		xminHist = new Stack <>();
+		xmaxHist = new Stack <>();
+		yminHist = new Stack <>();
+		ymaxHist = new Stack <>();
+		xminHist.push(xmin);
+		yminHist.push(ymin);
+		xmaxHist.push(xmax);
+		ymaxHist.push(ymax);
 		this.selectedArea = null;
         bildflaeche.initGraphics();
         berechne();
@@ -149,18 +159,18 @@ public class Mandel implements PixelCalculationObserver {
 	}
 
 	private void adjustXYtoCanvas() {
-		double aspectRatio = (double)this.bildflaeche.getHeight() / (double) this.bildflaeche.getWidth();
+		BigDecimal aspectRatio = new BigDecimal(this.bildflaeche.getHeight()).divide(new BigDecimal(this.bildflaeche.getWidth()), mc);
 		if(this.firstDraw) {
 			this.firstDraw = false;
 			xmin = this.XMIN_START;
 			xmax = this.XMAX_START;
-			ymin = ((xmin - xmax) * aspectRatio) /2;
-			ymax = -ymin;
+			ymin = xmin.subtract(xmax).multiply(aspectRatio).divide(new BigDecimal(2), Mandel.PRECISION, RoundingMode.HALF_UP);
+			ymax = ymin.multiply(BigDecimal.valueOf(-1));
 		} else {
 			// Keep the x-range and scale the y-range to the new aspect ratio
-			double middle = (ymax + ymin) / 2;
-			ymin = middle - (xmax-xmin)*aspectRatio/2;
-			ymax = middle + (xmax-xmin)*aspectRatio/2;
+			BigDecimal middle = ymax.add(ymin).divide(BigDecimal.valueOf(2), mc);
+			ymin = middle.subtract(xmax.subtract(xmin).multiply(aspectRatio).divide(BigDecimal.valueOf(2), mc));
+			ymax = middle.add(xmax.subtract(xmin).multiply(aspectRatio).divide(BigDecimal.valueOf(2), mc));
 			this.firstDraw=false;
 		}
 	}

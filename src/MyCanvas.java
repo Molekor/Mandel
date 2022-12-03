@@ -33,7 +33,7 @@ class MyCanvas extends JPanel
 	public void paint (Graphics g) {
 		// Kopiere das Mandelbrot-Bild auf den Vordergrund
 		dbg1.drawImage(dbImage2,0,0,this);
-		//bei gedrücktem Mausknopf das weisse Rechteck über das 1. Hintergrundbild zeichnen
+		//bei gedrï¿½cktem Mausknopf das weisse Rechteck ï¿½ber das 1. Hintergrundbild zeichnen
 		if (selectedArea != null)
 		{
 			dbg1.setColor(Color.BLACK);
@@ -46,7 +46,12 @@ class MyCanvas extends JPanel
 	}
 
 	public void setPixel(int x, int y, Color color) {
+		try {
 		dbImage2.setRGB(x, y, color.getRGB());
+		} catch(Exception e) {
+			System.out.println("OOB: " + x+","+y);
+			e.printStackTrace();
+		}
 	}
 
 	public void setSelection(Rectangle rectangle) {
