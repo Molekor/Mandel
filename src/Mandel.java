@@ -25,10 +25,10 @@ import java.util.Stack;
 
 public class Mandel implements PixelCalculationObserver {
 	
-	public static final int PRECISION = 25;
+	public static final int PRECISION = 30;
 	MathContext mc = new MathContext(Mandel.PRECISION, RoundingMode.HALF_UP);
 	private MainWindow mainWindow;
-	private int maxIter=1000;
+	private int maxIter=20000;
 	private Color[] meineFarben;
 	private MyCanvas bildflaeche;
 	private ActionProcessor actionProcessor;

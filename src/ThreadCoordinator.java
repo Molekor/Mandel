@@ -17,7 +17,9 @@ public class ThreadCoordinator extends Thread {
 	Vector<PointMapping> pointMappings = new Vector<>();
 	Iterator<PointMapping> pointMappingsIterator;
 	MathContext mc = new MathContext(Mandel.PRECISION, RoundingMode.HALF_UP);
-	
+	private int width;
+	private int height;
+	BigDecimal xfaktor;
 	public ThreadCoordinator(PixelCalculationObserver observer) {
 		this.observer = observer;
 		executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new SimpleThreadFactory());
@@ -27,12 +29,18 @@ public class ThreadCoordinator extends Thread {
 	
 	public void startCalculation(int width, int height, BigDecimal xmin, BigDecimal xmax, BigDecimal ymin, BigDecimal ymax, int maxIter) {
 		this.maxIter=maxIter;
+		this.width = width;
+		this.height = height;
 		synchronized(this) {
 		pointMappings.clear();
+    	xfaktor = xmax.subtract(xmin).divide(new BigDecimal(width), mc).abs();
+    	if(this.xfaktor.compareTo(new BigDecimal("1.0E-15")) < 0) {
+    		System.out.println("HIGH PRECISION!"+xfaktor.toString());
+    	}
+    	BigDecimal yfaktor = ymax.subtract(ymin).divide(new BigDecimal(height), mc).abs();
 		for (int px = 1 ; px < width ; px++) {
 		    for (int py = 1 ; py < height ; py++) {
-		    	BigDecimal xfaktor = xmax.subtract(xmin).divide(new BigDecimal(width), mc).abs();
-		    	BigDecimal yfaktor = ymax.subtract(ymin).divide(new BigDecimal(height), mc).abs();
+
 		    	BigDecimal fx = xmin.add(xfaktor.multiply(new BigDecimal(px), mc));
 		    	BigDecimal fy = ymin.add(yfaktor.multiply(new BigDecimal(py), mc));
 		        pointMappings.add(new PointMapping(new Point(px,py),fx,fy));
@@ -79,7 +87,11 @@ public class ThreadCoordinator extends Thread {
 		public void run() {
 			PointMapping data = ThreadCoordinator.this.getNextPoinMapping();
 			while (data!= null) {
-				observer.pixelCalculationComplete(data.point, PointCalculator.getIterationsForPoint(data.fx, data.fy, maxIter));
+				if(ThreadCoordinator.this.xfaktor.compareTo(new BigDecimal("1.0E-15")) > 0) {
+					observer.pixelCalculationComplete(data.point, PointCalculator.getIterationsForPoint(data.fx.doubleValue(), data.fy.doubleValue(), maxIter));
+				} else {
+					observer.pixelCalculationComplete(data.point, PointCalculator.getIterationsForPoint(data.fx, data.fy, maxIter));
+				}
 				synchronized(ThreadCoordinator.this) {
 					data = ThreadCoordinator.this.getNextPoinMapping();
 				}

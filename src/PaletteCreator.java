@@ -6,27 +6,27 @@ public class PaletteCreator {
     public static Color[] erzeugeFarben(int count, boolean grayscale) {
     	int farbe=0;
     	Random myRandom = new Random();
-    	int r=myRandom.nextInt(255);
-    	int g=myRandom.nextInt(255);
-    	int b=myRandom.nextInt(255);
+    	int r=myRandom.nextInt(155);
+    	int g=myRandom.nextInt(155);
+    	int b=myRandom.nextInt(155);
     	boolean rUp=true;
     	boolean gUp=false;
     	boolean bUp=true;
 
     	Color[] meineFarben = new Color[count];
         for (int i = 0; i < count; i++) {
-        	if(i>100 && (i%7==0)) {
-        		meineFarben[i]=new Color(r,g,b);
-        		continue;
-        	}
-        	if(i>500 && (i%5==0)) {
-        		meineFarben[i]=new Color(r,g,b);
-        		continue;
-        	}
-        	if(i>1000 && (i%3==0)) {
-        		meineFarben[i]=new Color(r,g,b);
-        		continue;
-        	}
+//        	if(i>100 && (i%7==0)) {
+//        		meineFarben[i]=new Color(r,g,b);
+//        		continue;
+//        	}
+//        	if(i>500 && (i%5==0)) {
+//        		meineFarben[i]=new Color(r,g,b);
+//        		continue;
+//        	}
+//        	if(i>1000 && (i%3==0)) {
+//        		meineFarben[i]=new Color(r,g,b);
+//        		continue;
+//        	}
 
 //            	if(i<10) {
 //            		farbe += 5;
@@ -43,9 +43,9 @@ public class PaletteCreator {
                     farbe=0;
                 }
                 if(rUp) {
-                	r += myRandom.nextInt(25);
+                	r += myRandom.nextInt(5);
                 } else {
-                	r -= myRandom.nextInt(15);
+                	r -= myRandom.nextInt(2);
                 }
                 if(r<0) {
                 	r=0;
@@ -58,9 +58,9 @@ public class PaletteCreator {
                 
                 
                 if(gUp) {
-                	g += myRandom.nextInt(20);
+                	g += myRandom.nextInt(2);
                 } else {
-                	g -= myRandom.nextInt(10);
+                	g -= myRandom.nextInt(5);
                 }
                 if(g<0) {
                 	g=0;
@@ -73,9 +73,9 @@ public class PaletteCreator {
                 
                 
                 if(bUp) {
-                	b += myRandom.nextInt(15);
+                	b += myRandom.nextInt(5);
                 } else {
-                	b -= myRandom.nextInt(25);
+                	b -= myRandom.nextInt(5);
                 }
                 if(b<0) {
                 	b=0;
