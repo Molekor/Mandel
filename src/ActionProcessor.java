@@ -5,7 +5,7 @@ import java.awt.event.ComponentListener;
 public class ActionProcessor implements ComponentListener {
 
 	private Mandel mandel;
-	
+
 	public ActionProcessor(Mandel mandel) {
 		this.mandel = mandel;
 	}
@@ -40,12 +40,15 @@ public class ActionProcessor implements ComponentListener {
 	}
 
 	@Override
-	public void componentMoved(ComponentEvent e) {}
+	public void componentMoved(ComponentEvent e) {
+	}
 
 	@Override
-	public void componentShown(ComponentEvent e) {}
+	public void componentShown(ComponentEvent e) {
+	}
 
 	@Override
-	public void componentHidden(ComponentEvent e) {}
+	public void componentHidden(ComponentEvent e) {
+	}
 
 }
