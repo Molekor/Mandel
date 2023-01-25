@@ -16,7 +16,7 @@ public class Mandel implements PixelCalculationObserver {
 	public static final int PRECISION = 30;
 	MathContext mathContext = new MathContext(Mandel.PRECISION, RoundingMode.HALF_UP);
 	private MainWindow mainWindow;
-	private int maxIter = 20000;
+	private int maxIter = 50000;
 	private Color[] meineFarben;
 	private MyCanvas bildflaeche;
 	private ActionProcessor actionProcessor;
@@ -33,13 +33,14 @@ public class Mandel implements PixelCalculationObserver {
 	private Stack<BigDecimal> yminHist = new Stack<>();
 	private Stack<BigDecimal> ymaxHist = new Stack<>();
 	private ThreadCoordinator threadCoordinator;
+	private int[][] values;
 
 	public static void main(String[] args) {
 		new Mandel();
 	}
 
 	public Mandel() {
-		this.threadCoordinator = new ThreadCoordinator(this);
+		this.threadCoordinator = new ThreadCoordinator(this, maxIter);
 		this.actionProcessor = new ActionProcessor(this);
 		this.bildflaeche = new MyCanvas(this.actionProcessor);
 		this.mainWindow = new MainWindow("Jos buntes Mandelbrotmengenprogramm", bildflaeche, actionProcessor);
@@ -52,6 +53,7 @@ public class Mandel implements PixelCalculationObserver {
 	public void berechne() {
 		int breiteAnzeige = bildflaeche.getWidth();
 		int hoeheAnzeige = bildflaeche.getHeight();
+		this.values = new int[breiteAnzeige][hoeheAnzeige];
 		// If a new section is selected, zoom in on it before calculation
 		if (this.selectedArea != null) {
 			BigDecimal zoom = new BigDecimal(Mandel.this.selectedArea.width).divide(new BigDecimal(breiteAnzeige), mathContext);
@@ -67,12 +69,12 @@ public class Mandel implements PixelCalculationObserver {
 		}
 		System.out.println("Starte Berechnung " + breiteAnzeige + " x " + hoeheAnzeige + " = " + (breiteAnzeige * hoeheAnzeige) + " MaxIter: " + maxIter + " X("
 				+ xmin + "," + xmax + ") Y(" + ymin + "," + ymax + ") ");
-		this.threadCoordinator.startCalculation(breiteAnzeige, hoeheAnzeige, xmin, xmax, ymin, ymax, maxIter);
-		this.threadCoordinator.run();
+		this.threadCoordinator.startCalculation(breiteAnzeige, hoeheAnzeige, xmin, xmax, ymin, ymax);
 		this.bildflaeche.repaint();
 	}
 
 	public synchronized void pixelCalculationComplete(Point pixel, int iterations) {
+		this.values[pixel.x][pixel.y] = iterations;
 		bildflaeche.setPixel(pixel.x, pixel.y, meineFarben[iterations - 1]);
 		bildflaeche.repaint();
 	}
@@ -80,7 +82,13 @@ public class Mandel implements PixelCalculationObserver {
 	public void changePalette(boolean grayscale) {
 		bildflaeche.initGraphics();
 		meineFarben = PaletteCreator.erzeugeFarben(maxIter, grayscale);
-		Mandel.this.berechne();
+		for (int x =0; x < this.values.length; x++) {
+			for (int y = 0 ; y < this.values[x].length; y++) {
+				bildflaeche.setPixel(x, y, meineFarben[Math.max(0,values[x][y]-1)]);
+			}
+		}
+		bildflaeche.repaint();
+		//Mandel.this.berechne();
 	}
 
 	public void setAreaSelection(Rectangle rectangle) {

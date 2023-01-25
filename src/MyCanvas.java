@@ -49,7 +49,7 @@ class MyCanvas extends JPanel {
 			dbImage2.setRGB(x, y, color.getRGB());
 		} catch (Exception e) {
 			System.out.println("OOB: " + x + "," + y);
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 

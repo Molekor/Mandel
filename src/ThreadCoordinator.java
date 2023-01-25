@@ -5,32 +5,28 @@ import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.LinkedBlockingQueue ;
 
-public class ThreadCoordinator extends Thread {
+public class ThreadCoordinator {
 
 	private PixelCalculationObserver observer;
 	private int maxIter;
-	ExecutorService executor;
-	//Vector<PointCalculator> workers = new Vector<>();
+	Vector<Calculator> workers = new Vector<>();
 	Vector<PointMapping> pointMappings = new Vector<>();
 	Iterator<PointMapping> pointMappingsIterator;
 	MathContext mc = new MathContext(Mandel.PRECISION, RoundingMode.HALF_UP);
-	private int width;
-	private int height;
 	BigDecimal xfaktor;
-	
-	public ThreadCoordinator(PixelCalculationObserver observer) {
+	LinkedBlockingQueue <PointMapping> queue = new LinkedBlockingQueue <PointMapping>(100);
+	public ThreadCoordinator(PixelCalculationObserver observer, int maxIter) {
 		this.observer = observer;
-		executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new SimpleThreadFactory());
-	}
-	
-	public void startCalculation(int width, int height, BigDecimal xmin, BigDecimal xmax, BigDecimal ymin, BigDecimal ymax, int maxIter) {
 		this.maxIter = maxIter;
-		this.width = width;
-		this.height = height;
+	}
+
+	public void startCalculation(int width, int height, BigDecimal xmin, BigDecimal xmax, BigDecimal ymin, BigDecimal ymax) {
+		for(Calculator worker:workers) {
+			worker.interrupt();
+		}
+		workers.clear();
 		synchronized (this) {
 			pointMappings.clear();
 			xfaktor = xmax.subtract(xmin).divide(new BigDecimal(width), mc).abs();
@@ -49,68 +45,79 @@ public class ThreadCoordinator extends Thread {
 			System.out.println("# of Points to compute:" + pointMappings.size());
 			pointMappingsIterator = pointMappings.iterator();
 		}
+		queue.clear();
+		queue = new LinkedBlockingQueue <PointMapping>(width*height);
+		while(pointMappingsIterator.hasNext()) {
+			queue.add(pointMappingsIterator.next());
+		}
+		for (int i = 1; i < Runtime.getRuntime().availableProcessors(); i++) {
+			Calculator worker = new Calculator(maxIter,queue);
+			worker.start();
+			this.workers.add(worker);
+		}
 	}
 
-	public PointMapping getNextPoinMapping() {
-		if (pointMappingsIterator.hasNext()) {
+	public synchronized PointMapping getNextPoinMapping() {
+		if (pointMappingsIterator!= null && pointMappingsIterator.hasNext()) {
 			return pointMappingsIterator.next();
 		} else {
 			return null;
 		}
 	}
 
-	@Override
-	public void run() {
-		for (int i = 1; i < Runtime.getRuntime().availableProcessors(); i++) {
-			executor.execute(new Calculator(observer, maxIter));
-		}
-	}
-
-	private class SimpleThreadFactory implements ThreadFactory {
-		public Thread newThread(Runnable r) {
-			Thread thread = new Thread(r);
-			thread.setPriority(MIN_PRIORITY);
-			return thread;
-		}
-	};
-
 	private class Calculator extends Thread {
-
-		private PixelCalculationObserver observer;
 		int maxIter;
+		private LinkedBlockingQueue <PointMapping> queue;
 
-		public Calculator(PixelCalculationObserver observer, int maxIter) {
-			this.observer = observer;
+		public Calculator(int maxIter, LinkedBlockingQueue <PointMapping> queue) {
+			System.out.println("New Calculator for #" + queue.size());
 			this.maxIter = maxIter;
+			this.queue = queue;
 		}
 
 		@Override
 		public void run() {
-			PointMapping data = ThreadCoordinator.this.getNextPoinMapping();
-			int iterations;
-			while (data != null) {
-				if (ThreadCoordinator.this.xfaktor.compareTo(new BigDecimal("1.0E-15")) > 0) {
-					iterations = this.getIterationsForPoint(data.fx.doubleValue(), data.fy.doubleValue(), maxIter);
-				} else {
-					iterations = this.getIterationsForPoint(data.fx, data.fy, maxIter);
-				}
-				if (!this.isInterrupted()) {
-					observer.pixelCalculationComplete(data.point, iterations);
-				}
-				synchronized (ThreadCoordinator.this) {
-					data = ThreadCoordinator.this.getNextPoinMapping();
-				}
-				
+			PointMapping data = null;
+			synchronized (ThreadCoordinator.this) {
+				data = queue.poll(); // ThreadCoordinator.this.getNextPoinMapping();
+				System.out.println("Polled: " + data);
 			}
+			int iterations = 0;
+			while (data != null) {
+				try {
+					if (ThreadCoordinator.this.xfaktor.compareTo(new BigDecimal("1.0E-15")) > 0) {
+						iterations = this.getIterationsForPoint(data.fx.doubleValue(), data.fy.doubleValue(), maxIter);
+					} else {
+						iterations = this.getIterationsForPoint(data.fx, data.fy, maxIter);
+					}
+					observer.pixelCalculationComplete(data.point, iterations);
+					synchronized (ThreadCoordinator.this) {
+						data = queue.poll(); // ThreadCoordinator.this.getNextPoinMapping();
+					}
+				} catch(InterruptedException ex) {
+					System.out.println("Calculation aborted: " + this);
+					return;
+				}
+			}
+			System.out.println("Out of Data: " + this);
 		}
-		
-		public int getIterationsForPoint(BigDecimal fx, BigDecimal fy, int maxIterations) {
+
+		public void interrupt() {
+			System.out.println("Called interrupt() on " + this);
+			super.interrupt();
+		}
+
+		public int getIterationsForPoint(BigDecimal fx, BigDecimal fy, int maxIterations) throws InterruptedException {
 			int i = 0;
 			BigDecimal temp;
 			BigDecimal real = BigDecimal.valueOf(0);
 			BigDecimal imaginary = BigDecimal.valueOf(0);
 			MathContext mc = new MathContext(Mandel.PRECISION, RoundingMode.HALF_UP);
 			for (i = 1; i < maxIterations; i++) {
+				if (Thread.interrupted()) {
+					System.out.println("INTERRUPTED at " + i);
+					throw new InterruptedException();
+				}
 				temp = real;
 				real = real.multiply(real, mc).subtract(imaginary.multiply(imaginary, mc)).add(fx);
 				imaginary = imaginary.multiply(temp, mc).multiply(BigDecimal.valueOf(2), mc).add(fy);
@@ -120,12 +127,17 @@ public class ThreadCoordinator extends Thread {
 			return i;
 		}
 
-		public int getIterationsForPoint(double x, double y, int maxIter) {
+		public int getIterationsForPoint(double x, double y, int maxIter) throws InterruptedException {
 			int i = 0;
 			double temp;
 			double real = 0;
 			double imaginary = 0;
 			for (i = 1; i < maxIter; i++) {
+				if (this.isInterrupted()) {
+					System.out.println("INTERRUPTED at " + x + "," + y);
+					System.out.println("INTERRUPTED at " + i);
+					throw new InterruptedException();
+				}
 				temp = real;
 				real = real * real - imaginary * imaginary + x;
 				imaginary = 2 * temp * imaginary + y;
